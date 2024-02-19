@@ -21,7 +21,7 @@ This is a publc repository of the research project where expander geometries, ex
 ## Expander geometries
 Folder `geometries` contains CAD models (and/or drawings) of expanders used in the project. The models are available in various formats, including STEP, STL and native CAD formats. The models are intended to be used for further research and development of expanders for small-scale distributed energy systems.
 
-![Axial hexamethyldisiloxane turbine 3D cutaway view](geometries/MM_turbine/AxT2%20Expander%20Assembly%20V2.3_9.png.png)
+![Axial hexamethyldisiloxane turbine 3D cutaway view](geometries/MM_turbine/AxT2%20Expander%20Assembly%20V2.3_9.png)
 
 ## Experimental data
 Folder `experimental_data` contains raw experimental data from the tests of expanders. The data are available in various formats, including CSV, XLSX and other formats. The data are published to boost industrial development as well as research on expanders in this field. Each subfolder contains data from a specific test, including the test conditions, measured data and other relevant information.
