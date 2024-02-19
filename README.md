@@ -26,7 +26,11 @@ Folder `geometries` contains CAD models (and/or drawings) of expanders used in t
 ## Experimental data
 Folder `experimental_data` contains raw experimental data from the tests of expanders. The data are available in various formats, including CSV, XLSX and other formats. The data are published to boost industrial development as well as research on expanders in this field. Each subfolder contains data from a specific test, including the test conditions, measured data and other relevant information.
 
+![Experimental data from the ORC expander testing](exp_data.png)
+
 ## Design tools
+
+
 
 
 ## Performance mapping
