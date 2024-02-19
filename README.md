@@ -29,9 +29,9 @@ Folder `experimental_data` contains raw experimental data from the tests of expa
 ![Experimental data from the ORC expander testing](exp_data.png)
 
 ## Design tools
+This folder contains various codes, scripts and tools used for the design of the ORC expanders as well as for the analysis of the experimental data, and prediction of the off-design performance. The tools are available in various formats, including Python, MATLAB, Excel and other formats. 
 
-
-
+![ORC expander modelling and design tools](design_tools.png)
 
 ## Performance mapping
 
