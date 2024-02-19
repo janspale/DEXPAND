@@ -1,4 +1,4 @@
-# DEXPAND
+# DEXPAND 
 Optimised expanders for small-scale distributed energy systems - raw experimental data, turbine geometries, performance mapping.
 
 ![ORC expander measurement and testing in the laboratory](dexpand.png)
