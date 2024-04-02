@@ -25,7 +25,7 @@ def check_err(r): # Function to check the error code from REFPROP
     if r.ierr > 0:
         raise ValueError(r.herr)
     
-os.chdir('C:\\GitHub\\DEXPAND\\experimental_data\\MM_testrig_CTU') # Change the working directory to the folder containing the data
+os.chdir('C:\\GitHub\\DEXPAND\\experimental_data\\MM_testrig_CTU\\W50_Spratech') # Change the working directory to the folder containing the data
 
 # Load the experimental data
 df = pd.read_csv('w50_data_220324.csv') 
@@ -38,7 +38,7 @@ time = df['cas'].values
 df['time_secs'] = df['cas'].apply(lambda t: int(t.split(':')[0])*3600 + int(t.split(':')[1])*60 + int(t.split(':')[2]))
 
 steady_states = []
-pressure_levels = [400, 500, 550]  # Define pressure levels
+pressure_levels = [410, 500, 570]  # Define pressure levels
 time_ranges = [(10*3600 + 48*60, 11*3600 + 26*60),  # Time ranges for each pressure level
                (13*3600 + 37*60, 14*3600 + 7*60),
                (14*3600 + 36*60, 14*3600 + 55*60)]
@@ -95,6 +95,8 @@ for pressure, (start_time, end_time) in zip(pressure_levels, time_ranges):
             averages['eta_turbine'] = averages['P_shaft_avg'] / (averages['m_dot_avg'] * (averages['h_ad_avg'] - averages['h_out_is']))
 
             rpm_averages[rpm] = averages
+    #average the average p_ad_avg 
+    #p_ad_avg = np.mean([rpm_averages[rpm]['p_ad_avg'] for rpm in rpm_averages])
     steady_states.append(rpm_averages)
 # Plotting
 fig, ax = plt.subplots()
@@ -104,7 +106,7 @@ lines, labels = [], []
 for i, state in enumerate(steady_states):
     x = [state[rpm]['n_shaft_avg'] for rpm in state]
     y = [state[rpm]['P_shaft_avg'] for rpm in state]
-    line1, = ax.plot(x, y, label=f'$P_{{{pressure_levels[i]}}}$ kPa')
+    line1, = ax.plot(x, y, label=f'$P_{{{pressure_levels[i]} kPa}}$')
     lines.append(line1)
     labels.append(line1.get_label())
     ax.scatter(x, y, marker='o')
@@ -112,7 +114,7 @@ for i, state in enumerate(steady_states):
     # Plotting efficiency on the secondary axis
     w = [state[rpm]['n_shaft_avg'] for rpm in state]
     z = [state[rpm]['eta_turbine'] for rpm in state]
-    line2, = ax2.plot(w, z, label=f'$\eta_{{{pressure_levels[i]}}}$', linestyle='--')
+    line2, = ax2.plot(w, z, label=f'$\eta_{{{pressure_levels[i]} kPa}}$', linestyle='--')
     lines.append(line2)
     labels.append(line2.get_label())
     ax2.scatter(w, z, marker='x')
@@ -125,3 +127,20 @@ fig.legend(lines, labels, loc='upper center', bbox_to_anchor=(0.5, 1.01), ncol=3
 
 plt.savefig('P_shaft_vs_n_shaft.png', dpi=600, bbox_inches='tight')
 plt.show()
+
+#save the evaluated data to a csv file using pandas
+evaluated_data = []
+for i, state in enumerate(steady_states):
+    for rpm in state:
+        evaluated_data.append({
+            'pressure': pressure_levels[i],
+            'n_shaft': state[rpm]['n_shaft_avg'],
+            'P_shaft': state[rpm]['P_shaft_avg'],
+            'm_dot': state[rpm]['m_dot_avg'],
+            'eta_turbine': state[rpm]['eta_turbine']
+        })
+evaluated_df = pd.DataFrame(evaluated_data)
+evaluated_df.to_csv('evaluated_data_2202324.csv', index=False)
+
+#print the evaluated data to the console
+#print(evaluated_df)
