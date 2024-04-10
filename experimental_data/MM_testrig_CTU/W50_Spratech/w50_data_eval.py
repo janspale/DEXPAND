@@ -11,8 +11,7 @@ RP = REFPROPFunctionLibrary(os.environ['RPPREFIX'])
 # Define the REFPROP fluid
 fluid = "MM"# hexamethyldisiloxane
 z = [1.0]   # Mole fractions
-eta_gen = 0.80 # Generator efficiency
-eta_vfd = 0.92 # VFD efficiency
+eta_gen = 0.33 # Generator efficiency
 
 #initialize REFPROP
 RP = REFPROPFunctionLibrary(os.environ['RPPREFIX']) # Instantiate the REFPROP function library
@@ -68,7 +67,7 @@ for pressure, (start_time, end_time) in zip(pressure_levels, time_ranges):
                 'n_gen_avg': rpm_data['n_gen (rpm)'].mean(),
             }
             # Adjust the generator power to get the shaft power
-            averages['P_shaft_avg'] = averages['P_gen_avg'] / eta_gen / eta_vfd
+            averages['P_shaft_avg'] = averages['P_gen_avg'] / eta_gen
             averages['n_shaft_avg'] = averages['n_gen_avg']
 
             # REFPROP calculations
