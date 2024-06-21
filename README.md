@@ -38,7 +38,7 @@ A dedicated folder `performance_mapping` contains detailed reports and results o
 
 The first result belonging to the feasibility mapping is the cycle design point optimization from WP1, repeated below in *Figure 1*. With a tailor-made design of the expander, it was how the design nominal point of the expander and whole cycle can affect the operational efficiency and thus cumulative power production. In this specific case a potential for 10 % increase in accumulated power production was demonstrated. 
 
-![Fig1](performance_mapping/figs/fig1.png)
+![Fig1](performance_mapping/figs/fig1.png | width=200)
 
 *Figure 1* Energy efficiency and accumulated power output for the original and optimized designs based on the reference case study.
 
@@ -52,7 +52,7 @@ The RVE results show that there is a cap of efficiency, clearly depending on the
 However, high-speed turbines, unless we want to exceed extreme speeds, the efficiency drops significantly at small power output systems. The Elektra turbine comes out of our analysis as a possible techno-economic competitor of RVE at power output above about 10 kW. Despite mostly slightly lower efficiency, it enables dry operation and limits a servicing need, which the RVEs have after no more than 10 000 hours.
 
 ![Fig2](performance_mapping/figs/fig2.png)
-*Figure 2 *Efficiency mapping for considered expander types (assuming impulse turbines).
+*Figure 2* Efficiency mapping for considered expander types (assuming impulse turbines).
 
 Nominal design speed needs to be also considered when selecting the expanders. *Figure 3* shows, that while the RVE and Elektra are considered always at constant 3 000 rpm, the other turbines are not only operating at high speed, but a suitable speed differs largely based on the power output.
  
