@@ -38,7 +38,7 @@ A dedicated folder `performance_mapping` contains detailed reports and results o
 
 The first result belonging to the feasibility mapping is the cycle design point optimization from WP1, repeated below in *Figure 1*. With a tailor-made design of the expander, it was how the design nominal point of the expander and whole cycle can affect the operational efficiency and thus cumulative power production. In this specific case a potential for 10 % increase in accumulated power production was demonstrated. 
 
-![Fig1](performance_mapping/figs/fig1.png | width=200)
+<img src=performance_mapping/figs/fig1.png width="100">
 
 *Figure 1* Energy efficiency and accumulated power output for the original and optimized designs based on the reference case study.
 
