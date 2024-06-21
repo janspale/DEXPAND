@@ -11,7 +11,7 @@ RP = REFPROPFunctionLibrary(os.environ['RPPREFIX'])
 # Define the REFPROP fluid
 fluid = "MM"# hexamethyldisiloxane
 z = [1.0]   # Mole fractions
-eta_gen = 0.33 # Generator efficiency
+eta_gen = 0.2 # Generator efficiency
 
 #initialize REFPROP
 RP = REFPROPFunctionLibrary(os.environ['RPPREFIX']) # Instantiate the REFPROP function library
@@ -28,7 +28,6 @@ os.chdir('C:\\GitHub\\DEXPAND\\experimental_data\\MM_testrig_CTU\\W50_Spratech')
 
 # Load the experimental data
 df = pd.read_csv('w50_data_220324.csv') 
-
 
 # read values into numpy arrays
 time = df['cas'].values
@@ -91,16 +90,15 @@ for pressure, (start_time, end_time) in zip(pressure_levels, time_ranges):
             averages['h_out_is'] = r.Output[0]
 
             # Turbine efficiency calculation
-            averages['eta_turbine'] = averages['P_shaft_avg'] / (averages['m_dot_avg'] * (averages['h_ad_avg'] - averages['h_out_is']))
+            averages["dH_is"] = (averages['h_ad_avg'] - averages['h_out_is'])*averages['m_dot_avg'] # Isentropic enthalpy drop
+            averages['eta_turbine'] = averages['P_shaft_avg'] / averages["dH_is"]
 
             rpm_averages[rpm] = averages
-    #average the average p_ad_avg 
-    #p_ad_avg = np.mean([rpm_averages[rpm]['p_ad_avg'] for rpm in rpm_averages])
     steady_states.append(rpm_averages)
+
 # Plotting
 fig, ax = plt.subplots()
 ax2 = ax.twinx()
-#bullshit comment
 lines, labels = [], []
 
 for i, state in enumerate(steady_states):
@@ -137,7 +135,8 @@ for i, state in enumerate(steady_states):
             'n_shaft': state[rpm]['n_shaft_avg'],
             'P_shaft': state[rpm]['P_shaft_avg'],
             'm_dot': state[rpm]['m_dot_avg'],
-            'eta_turbine': state[rpm]['eta_turbine']
+            'eta_turbine': state[rpm]['eta_turbine'],
+            "dH_is": state[rpm]["dH_is"],
         })
 evaluated_df = pd.DataFrame(evaluated_data)
 evaluated_df.to_csv('evaluated_data_2202324.csv', index=False)
