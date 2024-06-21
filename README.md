@@ -108,9 +108,10 @@ The full project technical report is available in `reports` folder as well as a 
 
 - [Project homepage](https://dexpand.cz/en/)
 - [Funding agency - Technology Agency of the Czech Republic](https://www.tacr.cz/en/)
+- [This repository](https://github.com/janspale/DEXPAND)
 
 # Licensing
 
-This repository is linsenced under the MIT License. See the [LICENSE](LICENSE) file for details.
+This repository is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 > The research leading to these results has received funding from the EEA / Norway Grants and the Technology Agency of the Czech Republic within the KAPPA Programme. The Project „Optimised expanders for small-scale distributed energy systems“ benefits from a € 1,469,700 grant from Iceland, Liechtenstein and Norway through the EEA Grants and the Technology Agency of the Czech Republic.
