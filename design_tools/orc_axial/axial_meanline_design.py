@@ -1,7 +1,7 @@
 """
 This is a Python design tool for the design of an axial impulse single stage small scale ORC turbine.
 Accompanies the PhD thesis of J.Spale, 2024.
-Jan.Spale@cvut.cz
+for questions, send an email to: Jan.Spale@cvut.cz
 """
 from __future__ import print_function
 
@@ -226,60 +226,6 @@ def meanline_design(D_mid,n_design,alpha_stator,h_over_D_mid,eta_guess):
 
     Ma[1] = c_is/a[1]  # [-], Mach number at the stator outlet (isentropic)
     phi_stator = np.sqrt(1-(0.0029*Ma[1]**3-0.0502*Ma[1]**2+0.2241*Ma[1]-0.0877)) # [-], velocity loss coefficient at the nozzles
-
-    """ obsolete Mach number iteration
-    # sonic point (nozzle throat) ([2])
-    #get isentropic exponent for (0) based on T,rho
-    r = RP.REFPROPdll(fluid,"TD","CP/CV",baseSI,iMass,iFlag,T[0],rho[0],z); check_err(r)
-    gamma_star = r.Output[0] # [-], isentropic exponent
-    T_star_is = T[0]*(2/(gamma_star+1)) # K, isentropic temperature at the nozzle throat
-    T_star = T_star_is # K, temperature at the nozzle throat, iterated, initial guess is isentropic
-
-    #get speed of sound, density and enthalpy and pressure at the nozzle throat
-    r = RP.REFPROPdll(fluid,"TD","D;H;W;P",baseSI,iMass,iFlag,T_star,rho[0],z); check_err(r)
-    rho[2],h[2],a[2],p[2] = r.Output[0:4] # kg/m3, J/kg, m/s, Pa
-    """
-    """ obsolete T_star iteration
-    #iterate to find the actual position of the nozzle throat
-    it = 0
-    loop_cond = False
-    Cond1 = False
-    Cond2 = False
-
-    # Placeholders for variables that need initial values
-
-    step = 0.01  # Adjust as necessary
-    max_it = 10000  # Adjust as necessary
-
-    while not loop_cond:
-        it += 1
-        #rho as a function of T_star and s[0]
-        r = RP.REFPROPdll(fluid,"TS","D",baseSI,iMass,iFlag,T_star,s[0],z); check_err(r)
-        rho[2] = r.Output[0] # kg/m3
-
-        #h,a,p as a function of T_star and rho[2]
-        r = RP.REFPROPdll(fluid,"TD","H;W;P",baseSI,iMass,iFlag,T_star,rho[2],z); check_err(r)
-        h[2],a[2],p[2] = r.Output[0:3] # kg/m3, J/kg, m/s, Pa
-
-        # finding the value of T_star that yields such a value of h[2] that a[2] is equal to c_is
-        X = (h[0] - h[2])
-        Y = (a[2] ** 2) / 2
-
-        comparison_value = (X - Y) / Y # [-], 
-        if comparison_value > 0: # T_star is too low
-            T_star += step
-            Cond1 = True
-        else: # T_star is too high
-            T_star -= step
-            Cond2 = True
-
-        if it >= max_it or (Cond1 and Cond2): # if the iteration limit is reached or the conditions are met
-            loop_cond = True
-
-    print("Number of iterations: ", it)
-    print("Initial guess: ", T_star_is)
-    print("T_star: ", T_star)
-    """
 
     #calculate isentropic expansion quasi-steady 1D, 1000 steps in pressure
     throat_trigger = False
@@ -984,11 +930,5 @@ if __name__=='__main__':
     #plot_fitness_landscape() # Plot the fitness landscape
     #plot_population_distribution(population) # Plot the distribution of the population
 
-    #FIX THE PLOTTING FUNCTIONS
-    
     toc = timeit.default_timer()
     print(f"Elapsed time: {toc-tic} s")
-
-
-
-
