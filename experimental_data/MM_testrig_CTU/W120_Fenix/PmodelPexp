@@ -1,0 +1,52 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Create dummy data
+data = {
+    'Pressure_Ratio': [2.0, 2.5, 3.0, 3.5, 4.0],
+    'Rotational_Speed': [1000, 1500, 2000, 2500, 3000],
+    'P_meas_x': [100, 150, 200, 250, 300],  # Measured power output
+    'P_model_y': [98, 148, 210, 240, 310]   # Modeled power output
+}
+
+df = pd.DataFrame(data)
+
+# Calculate MAPE
+def calculate_mape(actual, predicted):
+    return np.mean(np.abs((actual - predicted) / actual)) * 100
+
+mape = calculate_mape(df['P_meas_x'], df['P_model_y'])
+print(f"MAPE: {mape:.2f}%")
+
+# Calculate the furthest point from the ideal fit (y = x)
+distances = np.abs(df['P_model_y'] - df['P_meas_x'])
+max_distance_idx = np.argmax(distances)
+
+# Calculate the slope of the lines that will form the sector
+slope_upper = df['P_model_y'][max_distance_idx] / df['P_meas_x'][max_distance_idx]
+slope_lower = (2 * df['P_meas_x'][max_distance_idx] - df['P_model_y'][max_distance_idx]) / df['P_meas_x'][max_distance_idx]
+
+# Plotting the results
+plt.figure(figsize=(8, 6))
+plt.scatter(df['P_meas_x'], df['P_model_y'], color='blue', label='Measured vs Modeled')
+
+# Plot the ideal fit line (y = x)
+plt.plot([0, max(df['P_meas_x'])], [0, max(df['P_meas_x'])], color='red', linestyle='--', label='Ideal Fit')
+
+# Plot the sector lines
+x_vals = np.array([0, max(df['P_meas_x']) * 1.1])
+plt.plot(x_vals, slope_upper * x_vals, color='green', linestyle='-', label='Upper Sector Line')
+plt.plot(x_vals, slope_lower * x_vals, color='green', linestyle='-', label='Lower Sector Line')
+
+# Setting up the plot
+plt.xlabel('Measured Power Output (P_meas_x)')
+plt.ylabel('Modeled Power Output (P_model_y)')
+plt.title(f'Measured vs Modeled Power Output\nMAPE: {mape:.2f}%')
+plt.legend()
+plt.grid(True)
+plt.xlim([0, max(df['P_meas_x']) * 1.1])
+plt.ylim([0, max(df['P_model_y']) * 1.1])
+
+# Show the plot
+plt.show()

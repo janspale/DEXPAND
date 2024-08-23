@@ -632,7 +632,7 @@ def draw_velocity_triangles(c1u,c1a,w1u,w1a,U,c2u,c2a,w2u,w2a,alpha_stator,beta2
     plt.grid(True, linestyle='--')
     #equal aspect ratio
     plt.gca().set_aspect('equal', adjustable='box')
-    plt.savefig('velocity_triangles.png', dpi = 600)
+    plt.savefig('velocity_triangles.png', dpi = 1000)
     plt.show()
     plt.close()
 
@@ -684,9 +684,9 @@ def draw_expansion_line(s,h,s_nozzle_out,h_nozzle_out,s2,h2,h2t,s_out_eta,h_out_
     #change y axis to scientific notation
     ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
     #add text to the isobars
-    ax.text(s[0]-10, h[0]-2000, r'$p_{in}$', ha='right')
-    ax.text(s_nozzle_out-10, h_nozzle_out-9000, r'$p_{out}$', ha='right')
-    ax.text(s_nozzle_out-10, h_nozzle_out-2000, r'$p_{out,tot}$', ha='right')
+    ax.text(s[0]-10, h[0]-2000, r'$p_{ad}$', ha='right')
+    ax.text(s_nozzle_out-10, h_nozzle_out-9000, r'$p_{em}$', ha='right')
+    ax.text(s_nozzle_out-10, h_nozzle_out-2000, r'$p_{em,tot}$', ha='right')
     #add text to the state points
     ax.text(s[0]-1, h[0]+500, '1', ha='right')
     ax.text(s_nozzle_out-1, h_nozzle_out-1000, '2', ha='right')
@@ -702,16 +702,16 @@ def draw_nozzle_expansion(PR_is,Ma_is,p_is,throat_index,PR_act,Ma_act):
     #draw isentropic expansion
     fig, ax = plt.subplots()
     ax.plot(PR_is,Ma_is, label='Isentropic expansion', color='black')
-    ax.set(xlabel='Pressure ratio [-]', ylabel='Mach number [-]', title='Isentropic expansion vs Nozzle with losses')
+    ax.set(xlabel=r'Pressure ratio $\Pi$ [-]', ylabel=r'Mach number $Ma$ [-]')
     ax.scatter(p_is[throat_index]/p_outlet,1, color='red', marker='x')
     #add text to the throat
     ax.text(p_is[throat_index]/p_outlet+0.05, 1.05, 'Throat', ha='right')
-    ax.plot(PR_act,Ma_act, label='Actual expansion', color='black', linestyle='--')
+    ax.plot(PR_act,Ma_act, label='Real expansion with losses', color='black', linestyle='--')
     #add scatter to the nozzle outlet for both and add text with the Ma value, use x markers in red
     ax.scatter(p_is[-1]/p_outlet,Ma_act[-1], color='red', marker='x')
-    ax.text(p_is[-1]/p_outlet, Ma_act[-1], 'Ma = '+str(round(Ma_act[-1],3)), ha='right')
+    ax.text(p_is[-1]/p_outlet, Ma_act[-1], r'$Ma_2$ = '+str(round(Ma_act[-1],3)), ha='right')
     ax.scatter(p_is[-1]/p_outlet,Ma_is[-1], color='red', marker='x')
-    ax.text(p_is[-1]/p_outlet, Ma_is[-1], 'Ma_is = '+str(round(Ma_is[-1],3)), ha='right')
+    ax.text(p_is[-1]/p_outlet, Ma_is[-1], r'$Ma_{2,is}$ = '+str(round(Ma_is[-1],3)), ha='right')
     #add a tick at x axis for the inlet, throat and for the outlet of the nozzle
     ax.axvline(p_is[0]/p_outlet, color='black', linestyle='--', linewidth=0.5)
     ax.axvline(p_is[throat_index]/p_outlet, color='black', linestyle='--', linewidth=0.5)
@@ -721,9 +721,9 @@ def draw_nozzle_expansion(PR_is,Ma_is,p_is,throat_index,PR_act,Ma_act):
     ax.text(p_is[throat_index]/p_outlet+0.05, 0.5, 'Throat', ha='right', rotation=90)
     ax.text(p_is[-1]/p_outlet+0.05, 0.5, 'Outlet', ha='right', rotation=90)
     #write the x axis value next to the tick text, rotated by 90°
-    ax.text(p_is[0]/p_outlet-0.05, 0.5, "PR = "+str(round(p_is[0]/p_outlet,2)), ha='left', rotation=90)
-    ax.text(p_is[throat_index]/p_outlet-0.05, 0.5, "PR = "+str(round(p_is[throat_index]/p_outlet,2)), ha='left', rotation=90)
-    ax.text(p_is[-1]/p_outlet-0.05, 0.5, "PR = "+str(round(p_is[-1]/p_outlet,2)), ha='left', rotation=90)
+    ax.text(p_is[0]/p_outlet-0.05, 0.5, r"$\Pi$ = "+str(round(p_is[0]/p_outlet,2)), ha='left', rotation=90)
+    ax.text(p_is[throat_index]/p_outlet-0.05, 0.5, r"$\Pi$ = "+str(round(p_is[throat_index]/p_outlet,2)), ha='left', rotation=90)
+    ax.text(p_is[-1]/p_outlet-0.05, 0.5, r"$\Pi$= "+str(round(p_is[-1]/p_outlet,2)), ha='left', rotation=90)
     ax.legend()
     ax.grid(True, linestyle='--')
     #invert x axis
@@ -918,6 +918,17 @@ def sensitivity_analysis_rpm_pool(n_design, D_mid, alpha_stator, h_over_D_mid, e
     # Write the polyfit coefficients to the terminal
     print(f"Polyfit coefficients: {p}")
 
+    #create a heatmap of the turbine power over the rotational speed (x) and the pressure ratio (y), use matplotlib
+    fig, ax = plt.subplots()
+    n_range, p_inlet_range = np.meshgrid(n_range, p_inlet_range)
+    P_turb_range = np.array(P_turb_range)
+    c = ax.pcolormesh(n_range, p_inlet_range/p_outlet, P_turb_range, cmap='viridis')
+    fig.colorbar(c, ax=ax, label='Turbine power [W]')
+    ax.set(xlabel='Rotational speed [rpm]', ylabel='Pressure ratio [-]')
+    plt.savefig('sensitivity_analysis_rpm_power_heatmap.png', dpi=600)
+    plt.show()
+    plt.close()
+
 def sensitivity_analysis_alpha_stator(n_design,D_mid,alpha_stator,h_over_D_mid,eta_guess):
     #vary alpha_stator in the range of 10° to 20° and calculate the eta_turb, plot it over alpha_stator
     alpha_stator_range = np.linspace(10,20,100)
@@ -1081,22 +1092,20 @@ def pareto_frontier_eta_rpm(n_design,D_mid,alpha_stator,h_over_D_mid,eta_guess):
 if __name__=='__main__':
     #run 1DTDT
     tic = timeit.default_timer()
-    #res=meanline_design(D_mid,n_design,alpha_stator,h_over_D_mid,eta_guess,p_inlet,T_inlet)
-    #print(res)
-
-    #uncomment as you wish to draw the plots
-    #draw_nozzle_expansion(res["PR_is"],res["Ma_is"],res["p_is"],res["throat_index"],res["PR_act"],res["Ma_act"])
-    #draw_expansion_line(res["s"],res["h"],res["s_nozzle_out"],res["h_nozzle_out"],res["s2"],res["h2"],res["h2t"],res["s_out_eta"],res["h_out_eta"],res["p_inlet"],res["p_outlet"],res["p_outlet_total"],res["fluid"],res["z"])
-    #draw_velocity_triangles(res["c1u"],res["c1a"],res["w1u"],res["w1a"],res["U"],res["c2u"],res["c2a"],res["w2u"],res["w2a"],res["alpha_stator"],res["beta2"],res["alpha_rotor"])
 
     #senstivity analyses
     #sensitivity_analysis_rpm(n_design,D_mid,alpha_stator,h_over_D_mid,eta_guess,p_inlet,T_inlet)
-    sensitivity_analysis_rpm_pool(n_design,D_mid,alpha_stator,h_over_D_mid,eta_guess,p_inlet,T_inlet)
+    #sensitivity_analysis_rpm_pool(n_design,D_mid,alpha_stator,h_over_D_mid,eta_guess,p_inlet,T_inlet)
     #sensitivity_analysis_alpha_stator(n_design,D_mid,alpha_stator,h_over_D_mid,eta_guess)
     #sensitivity_analysis_D_mid(n_design,D_mid,alpha_stator,h_over_D_mid,eta_guess)
+     
+    res=meanline_design(D_mid,n_design,alpha_stator,h_over_D_mid,eta_guess,p_inlet,T_inlet)
+    print(res)
 
-
-    #pareto_frontier_eta_rpm(n_design,D_mid,alpha_stator,h_over_D_mid,eta_guess)
+     #uncomment as you wish to draw the plots
+    #draw_nozzle_expansion(res["PR_is"],res["Ma_is"],res["p_is"],res["throat_index"],res["PR_act"],res["Ma_act"])
+    #draw_expansion_line(res["s"],res["h"],res["s_nozzle_out"],res["h_nozzle_out"],res["s2"],res["h2"],res["h2t"],res["s_out_eta"],res["h_out_eta"],res["p_inlet"],res["p_outlet"],res["p_outlet_total"],res["fluid"],res["z"])
+    draw_velocity_triangles(res["c1u"],res["c1a"],res["w1u"],res["w1a"],res["U"],res["c2u"],res["c2a"],res["w2u"],res["w2a"],res["alpha_stator"],res["beta2"],res["alpha_rotor"])
 
     """
     #Genetic Algorithm 

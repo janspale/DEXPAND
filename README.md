@@ -5,7 +5,7 @@ Optimised expanders for small-scale distributed energy systems - raw experimenta
 
 > DEXPAND project analyses potentials and feasibility of prospective expanders for organic Rankine cycles (ORC) based on impulse turbomachines and rotary vane expanders in power range of 1-50 kW. Geometries and experimental data including many off-design operation states are summarised and published to boost industrial development as well as research on expanders in this field. 
 
-This is a publc repository of the research project where expander geometries, experimental data and performance mapping will be published. The repository is open to the public and is intended to be used by the research community, industry and other stakeholders interested in the field of small-scale distributed energy systems and expanders for ORC.
+This is a publc repository of the research project where expander geometries, experimental data and performance mapping will be published. The repository is open to the public and is intended to be used by the research community, industry and other stakeholders interested in the field of small-scale distributed energy systems and expanders for ORC. Partnering repository of the NTNU Trondheim named "TurboFlow" is available at [NTNU repository](https://github.com/turbo-sim/turboflow) and its documentation at https://turbo-sim.github.io/turboflow/.
 
 ## Table of contents
 
