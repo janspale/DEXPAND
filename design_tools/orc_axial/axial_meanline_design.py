@@ -492,8 +492,6 @@ def meanline_design(D_mid,n_design,alpha_stator,h_over_D_mid,eta_guess, p_inlet,
     plt.show()
     """
 
-    #compare nozzle design with real gas properties and perfect gas properties - overlap MoC
-
     #velocity triangles
     c1a = c_nozzle_out*np.sin(np.radians(alpha_stator)) # m/s; axial absolute velocity stator outlet
     c1u = c_nozzle_out*np.cos(np.radians(alpha_stator)) # m/s; tangential absolute velocity stator outlet
@@ -514,6 +512,7 @@ def meanline_design(D_mid,n_design,alpha_stator,h_over_D_mid,eta_guess, p_inlet,
     chords = [0.005,0.0075,0.01,0.0125,0.015,0.2,0.25,0.3,0.4,0.5]
     chord_guess = 1.6*np.sqrt((P_guess/m_dot/1000+25))/1000 # m; guess for rotor chord
     chord = min(chords, key=lambda x:abs(x-chord_guess)) #pick the closest chord value from the list
+    #chord = 0.0125 # m; rotor chord
     phi_it = 0.957 - 0.000362 * theta - 0.0258 * Ma1r + 0.00000639 * theta**2 + 0.0674 * Ma1r**2 - 0.0000000753 * theta**3 - 0.043 * Ma1r**3 - 0.000238 * theta * Ma1r + 0.00000145 * theta**2 * Ma1r + 0.0000425 * theta * Ma1r**2 # [-]; impulse turbine loss factor, correlation
     def get_phi(phi_it,ht_rotor,chord):
         #need phi_it loop here to get w2 
@@ -732,9 +731,9 @@ def draw_nozzle_expansion(PR_is,Ma_is,p_is,throat_index,PR_act,Ma_act):
     plt.show()
     plt.close()
 
-def sensitivity_analysis_rpm(n_design,D_mid,alpha_stator,h_over_D_mid,eta_guess,p_inlet,T_inlet):
-    #vary rotational speed in the range of 50 to 150% of nominal speed and calculate the eta_turb, plot it over U_over_c_is
-    """ original
+def legacy_sensitivity_analysis_rpm(n_design,D_mid,alpha_stator,h_over_D_mid,eta_guess,p_inlet,T_inlet):
+    #vary rotational speed in the range of 50 to 150% of nominal speed and calculate the eta_turb, plot it over U_over_c_is - legacy code
+    
     n_range = np.linspace(0.5*n_design,1.5*n_design,100)
     eta_turb_range = []
     U_over_c_is_range = []
@@ -755,82 +754,7 @@ def sensitivity_analysis_rpm(n_design,D_mid,alpha_stator,h_over_D_mid,eta_guess,
     plt.savefig('sensitivity_analysis_rpm.png', dpi = 600)
     plt.show()
     plt.close()
-    """
     
-    p_inlet_range = np.linspace(100000, 700000, 100)
-    n_range = np.linspace(7500, 24000, 100)
-    eta_turb_range = []
-    P_turb_range = []
-    #initialize REFPROP
-    RP = REFPROPFunctionLibrary(os.environ['RPPREFIX']) # Instantiate the REFPROP function library
-    RP.SETPATHdll(os.environ['RPPREFIX']) # Set the path to the folder containing the REFPROP shared library
-    RP.SETFLUIDSdll(fluid)  # Set the fluids
-    baseSI = RP.GETENUMdll(0, "MASSBASESI").iEnum # Get the base SI units
-    iMass = 0; iFlag = 0 # Set the mass and flag to 0
-
-    def check_err(r): # Function to check the error code from REFPROP
-        if r.ierr > 0:
-            raise ValueError(r.herr)
-    
-    dT_SH = 10 # K; superheating temperature
-
-    # Calculate turbine efficiency for each combination of p_inlet and n
-    for p_inlet in p_inlet_range:
-        r = RP.REFPROPdll(fluid, "PQ", "T", baseSI, iMass, iFlag, p_inlet, 1, z)
-        check_err(r)
-        T_inlet = r.Output[0] + dT_SH  # K; inlet temperature
-        eta_turb_for_p = []
-        P_turb_for_p = []
-        for n in n_range:
-            res = meanline_design(D_mid, n, alpha_stator, h_over_D_mid, eta_guess, p_inlet, T_inlet)
-            eta_turb_for_p.append(res["eta_turb"])
-            P_turb_for_p.append(res["P_turb_aero"])
-        eta_turb_range.append(eta_turb_for_p)
-        P_turb_range.append(P_turb_for_p)
-
-    # Plotting the results
-    fig, ax = plt.subplots()
-    for i, p_inlet in enumerate(p_inlet_range):
-        ax.plot(n_range, eta_turb_range[i], label=f'p_inlet = {p_inlet:.0f} Pa')
-
-    ax.set(xlabel='Rotational speed [rpm]', ylabel='Turbine efficiency [-]')
-    #ax.legend(title='Inlet Pressure')
-    ax.grid(True, linestyle='--')
-    plt.savefig('sensitivity_analysis_rpm.png', dpi=600)
-    plt.show()
-    plt.close()
-
-    fig, ax = plt.subplots()
-    for i, p_inlet in enumerate(p_inlet_range):
-        ax.plot(n_range, P_turb_range[i], label=f'p_inlet = {p_inlet:.0f} Pa')
-    
-    ax.set(xlabel='Rotational speed [rpm]', ylabel='Turbine power [W]')
-    #ax.legend(title='Inlet Pressure')
-    ax.grid(True, linestyle='--')
-    plt.savefig('sensitivity_analysis_rpm_power.png', dpi=600)
-    plt.show()
-    plt.close()
-
-    #find maxima for each P_turb_range and plot it over n
-    max_P_turb = [max(P_turb) for P_turb in P_turb_range]
-    max_P_turb_index = [P_turb.index(max_P) for P_turb, max_P in zip(P_turb_range, max_P_turb)]
-    max_P_turb_rpm = [n_range[index] for index in max_P_turb_index]
-    fig, ax = plt.subplots()
-    ax.plot(p_inlet_range/p_outlet, max_P_turb_rpm, label='Maximum power', color='black')
-    ax.set(xlabel='PR [-]', ylabel='Ideal Rotational speed [rpm]')
-    #ax.legend()
-    ax.grid(True, linestyle='--')
-    #polyfit the max_P_turb_rpm over p_inlet_range/p_outlet
-    p = np.polyfit(p_inlet_range/p_outlet, max_P_turb_rpm, 4)
-    #plot the polyfit into the same graph
-    ax.plot(p_inlet_range/p_outlet, np.polyval(p, p_inlet_range/p_outlet), 'r--')
-    plt.savefig('sensitivity_analysis_rpm_power_max.png', dpi=600)
-    plt.show()
-    plt.close()
-
-    #write the polyfit coefficients to a terminal
-    print(f"Polyfit coefficients: {p}")
-
 def calculate_efficiency_for_n(args):
     n, D_mid, alpha_stator, h_over_D_mid, eta_guess, p_inlet, T_inlet = args
     res = meanline_design(D_mid, n, alpha_stator, h_over_D_mid, eta_guess, p_inlet, T_inlet)
@@ -923,9 +847,26 @@ def sensitivity_analysis_rpm_pool(n_design, D_mid, alpha_stator, h_over_D_mid, e
     n_range, p_inlet_range = np.meshgrid(n_range, p_inlet_range)
     P_turb_range = np.array(P_turb_range)
     c = ax.pcolormesh(n_range, p_inlet_range/p_outlet, P_turb_range, cmap='viridis')
-    fig.colorbar(c, ax=ax, label='Turbine power [W]')
-    ax.set(xlabel='Rotational speed [rpm]', ylabel='Pressure ratio [-]')
+    #plot iso-power lines
+    iso_power = [3000,4000,5000,6000,7000,8000,9000]
+    for power in iso_power:
+        ax.contour(n_range, p_inlet_range/p_outlet, P_turb_range, levels=[power], colors='black')
+    fig.colorbar(c, ax=ax, label=r'Turbine power $P_{mech}$ [W]')
+    ax.set(xlabel=r'Rotational speed $n$ [rpm]', ylabel=r'Pressure ratio $\Pi$ [-]')
     plt.savefig('sensitivity_analysis_rpm_power_heatmap.png', dpi=600)
+    plt.show()
+    plt.close()
+
+    #create a heatmap of the turbine efficiency over the rotational speed (x) and the pressure ratio (y), use matplotlib, show iso-efficiency lines 0.8,0.775,0.75,0.725,0.7,0.675,0.65,0.625,0.6
+    fig, ax = plt.subplots()
+    c = ax.pcolormesh(n_range, p_inlet_range/p_outlet, eta_turb_range, cmap='viridis')
+    fig.colorbar(c, ax=ax, label=r'Turbine efficiency $\eta_{{is}_{t-s}}$ [-]')
+    ax.set(xlabel=r'Rotational speed $n$ [rpm]', ylabel=r'Pressure ratio $\Pi$ [-]')
+    #plot iso-efficiency lines
+    iso_efficiency = [0.75,0.725,0.7,0.675,0.65,0.625,0.6]
+    for eff in iso_efficiency:
+        ax.contour(n_range, p_inlet_range/p_outlet, eta_turb_range, levels=[eff], colors='black')
+    plt.savefig('sensitivity_analysis_rpm_efficiency_heatmap.png', dpi=600)
     plt.show()
     plt.close()
 
@@ -1045,76 +986,32 @@ def plot_population_distribution(population):
     fig.tight_layout()
     plt.show()
 
-def pareto_frontier_eta_rpm(n_design,D_mid,alpha_stator,h_over_D_mid,eta_guess):
-    #initialize REFPROP
-    RP = REFPROPFunctionLibrary(os.environ['RPPREFIX']) # Instantiate the REFPROP function library
-    RP.SETPATHdll(os.environ['RPPREFIX']) # Set the path to the folder containing the REFPROP shared library
-    RP.SETFLUIDSdll(fluid)  # Set the fluids
-    baseSI = RP.GETENUMdll(0, "MASSBASESI").iEnum # Get the base SI units
-    iMass = 0; iFlag = 0 # Set the mass and flag to 0
-
-    def check_err(r): # Function to check the error code from REFPROP
-        if r.ierr > 0:
-            raise ValueError(r.herr)
-    
-    p_range = np.linspace(300000,600000,30)
-    dT_SH = 10 # K; superheating temperature
-    eta_turb_max_set = []
-    n_eta_max_set = []
-    n_range = np.linspace(0.5*n_design,1.5*n_design,10)
-    for p in p_range:
-        p_inlet = p
-        r = RP.REFPROPdll(fluid, "PQ", "T", baseSI, iMass, iFlag, p_inlet, 1, z)
-        check_err(r)
-        T_inlet = r.Output[0] + dT_SH  # K; inlet temperature
-
-        eta_turb_max = 0
-        n_eta_max = 0
-
-        for n in n_range:
-            res = meanline_design(D_mid, n, alpha_stator, h_over_D_mid, eta_guess, p_inlet, T_inlet)
-            if res["eta_turb"] > eta_turb_max:
-                eta_turb_max = res["eta_turb"]
-                n_eta_max = n
-
-        eta_turb_max_set.append(eta_turb_max)
-        n_eta_max_set.append(n_eta_max)
-
-    fig, ax = plt.subplots()
-    ax.plot(p_inlet,eta_turb_max_set, label='Pareto frontier', color='black')
-    ax.set(xlabel='Nominal speed [rpm]', ylabel='Maximum turbine efficiency [-]')
-    ax.legend()
-    ax.grid(True, linestyle='--')
-    plt.savefig('pareto_frontier_eta_rpm.png', dpi = 600)
-    plt.show()
-    plt.close()
-
 if __name__=='__main__':
     #run 1DTDT
     tic = timeit.default_timer()
 
     #senstivity analyses
-    #sensitivity_analysis_rpm(n_design,D_mid,alpha_stator,h_over_D_mid,eta_guess,p_inlet,T_inlet)
+    #legacy_sensitivity_analysis_rpm(n_design,D_mid,alpha_stator,h_over_D_mid,eta_guess,p_inlet,T_inlet)
     #sensitivity_analysis_rpm_pool(n_design,D_mid,alpha_stator,h_over_D_mid,eta_guess,p_inlet,T_inlet)
     #sensitivity_analysis_alpha_stator(n_design,D_mid,alpha_stator,h_over_D_mid,eta_guess)
     #sensitivity_analysis_D_mid(n_design,D_mid,alpha_stator,h_over_D_mid,eta_guess)
      
-    res=meanline_design(D_mid,n_design,alpha_stator,h_over_D_mid,eta_guess,p_inlet,T_inlet)
-    print(res)
+    #res=meanline_design(D_mid,n_design,alpha_stator,h_over_D_mid,eta_guess,p_inlet,T_inlet)
+    #print(res)
 
      #uncomment as you wish to draw the plots
     #draw_nozzle_expansion(res["PR_is"],res["Ma_is"],res["p_is"],res["throat_index"],res["PR_act"],res["Ma_act"])
     #draw_expansion_line(res["s"],res["h"],res["s_nozzle_out"],res["h_nozzle_out"],res["s2"],res["h2"],res["h2t"],res["s_out_eta"],res["h_out_eta"],res["p_inlet"],res["p_outlet"],res["p_outlet_total"],res["fluid"],res["z"])
-    draw_velocity_triangles(res["c1u"],res["c1a"],res["w1u"],res["w1a"],res["U"],res["c2u"],res["c2a"],res["w2u"],res["w2a"],res["alpha_stator"],res["beta2"],res["alpha_rotor"])
+    #draw_velocity_triangles(res["c1u"],res["c1a"],res["w1u"],res["w1a"],res["U"],res["c2u"],res["c2a"],res["w2u"],res["w2a"],res["alpha_stator"],res["beta2"],res["alpha_rotor"])
 
-    """
+    
     #Genetic Algorithm 
     import multiprocessing
     pool = multiprocessing.Pool(multiprocessing.cpu_count()-2)
 
     # Define the optimization problem to maximize eta_turb
-    creator.create("FitnessMax", base.Fitness, weights=(1.0,))
-    creator.create("Individual", list, fitness=creator.FitnessMax)
+    creator.create("FitnessMax", base.Fitness, weights=(1.0,)) # Maximization problem
+    creator.create("Individual", list, fitness=creator.FitnessMax) # Individual class
 
     # Setup the parameter ranges
     parameter_bounds = [
@@ -1133,13 +1030,13 @@ if __name__=='__main__':
     # Register the genetic algorithm functions
     toolbox = base.Toolbox()
 
-    toolbox.register("map", pool.map)
-    toolbox.register("individual", tools.initIterate, creator.Individual, create_individual)
-    toolbox.register("population", tools.initRepeat, list, toolbox.individual)
-    toolbox.register("evaluate", evaluate)
-    toolbox.register("mate", tools.cxBlend, alpha=0.5)
-    toolbox.register("mutate", tools.mutPolynomialBounded, low=[lb for lb, ub in parameter_bounds], up=[ub for lb, ub in parameter_bounds], eta=0.5, indpb=0.1)
-    toolbox.register("select", tools.selTournament, tournsize=3)
+    toolbox.register("map", pool.map) # Parallel map
+    toolbox.register("individual", tools.initIterate, creator.Individual, create_individual) # Individual
+    toolbox.register("population", tools.initRepeat, list, toolbox.individual) # Population
+    toolbox.register("evaluate", evaluate) # Evaluation function
+    toolbox.register("mate", tools.cxBlend, alpha=0.5) # Blend crossover
+    toolbox.register("mutate", tools.mutPolynomialBounded, low=[lb for lb, ub in parameter_bounds], up=[ub for lb, ub in parameter_bounds], eta=0.5, indpb=0.1) # Polynomial mutation
+    toolbox.register("select", tools.selTournament, tournsize=3) # Tournament selection
     
     # Generate the initial population
     population = toolbox.population(n=40)
@@ -1172,7 +1069,7 @@ if __name__=='__main__':
     #plot_parameters_evolution(log, param_labels)     # Plot the evolution of the parameters
     #plot_fitness_landscape() # Plot the fitness landscape
     #plot_population_distribution(population) # Plot the distribution of the population
-    """
+    
 
     toc = timeit.default_timer()
     print(f"Elapsed time: {toc-tic} s")
