@@ -1,6 +1,6 @@
 """
 This is a Python design tool for the design of an axial impulse single stage small scale ORC turbine.
-Accompanies the PhD thesis of J.Spale, 2024.
+Accompanies the PhD thesis of J.Spale, 2024. CTU in Prague, supervisor: prof.Ing.M.Kolovratnik, CSc.
 for questions, send an email to: Jan.Spale@cvut.cz
 """
 from __future__ import print_function
@@ -24,7 +24,6 @@ import random
 
 from matplotlib.patches import Arc
 from matplotlib.transforms import Bbox, IdentityTransform, TransformedBbox
-
 
 class AngleAnnotation(Arc):
     """
@@ -176,10 +175,10 @@ class AngleAnnotation(Arc):
 RP_path = "c:\\Program Files (x86)\\REFPROP"
 
 # cycle boundary conditions
-p_inlet = convert(550,"kPa","Pa") # kPa
-T_inlet = convert(180,"C","K") # C
+p_inlet = convert(570,"kPa","Pa") # kPa
+T_inlet = convert(184,"C","K") # C
 p_outlet = convert(55,"kPa","Pa") # kPa
-m_dot = 0.25  # kg/s
+m_dot = 0.222  # kg/s
 fluid = "MM" # hexamethyldisiloxane
 z = [1.0] # [-] molar fraction of the fluid
 
@@ -187,11 +186,12 @@ z = [1.0] # [-] molar fraction of the fluid
 n_design = 18000  # rpm
 D_mid = 0.135  # m
 alpha_stator = 13  # deg
+beta_rotor = 23.5  # deg
 h_over_D_mid = 0.04  # [-]
 eta_guess = 0.7  # [-]
 e = 1 # [-] partial admission factor
 
-def meanline_design(D_mid,n_design,alpha_stator,h_over_D_mid,eta_guess, p_inlet, T_inlet):
+def meanline_design(D_mid,n_design,alpha_stator,h_over_D_mid,eta_guess, p_inlet, T_inlet,beta_rotor):
     #initialize REFPROP
     RP = REFPROPFunctionLibrary(os.environ['RPPREFIX']) # Instantiate the REFPROP function library
     RP.SETPATHdll(os.environ['RPPREFIX']) # Set the path to the folder containing the REFPROP shared library
@@ -282,11 +282,11 @@ def meanline_design(D_mid,n_design,alpha_stator,h_over_D_mid,eta_guess, p_inlet,
     ht_nozzle = h_over_D_mid*D_mid # m
     b_nozzles_out = A_outlet/ht_nozzle # m
     b_nozzles_throat = A_throat/ht_nozzle # m
-    no_nozzles = 10 # [-]
+    no_nozzles = 10 # [-] #CONSTANT!!!!! - to be varied
     b_nozzle_out = b_nozzles_out/no_nozzles # m
     b_nozzle_throat = b_nozzles_throat/no_nozzles # m
 
-    """ #gammas
+     #gammas
 
     CP.set_config_string(CP.ALTERNATIVE_REFPROP_PATH, os.getenv('RPPREFIX'))
 
@@ -490,7 +490,6 @@ def meanline_design(D_mid,n_design,alpha_stator,h_over_D_mid,eta_guess, p_inlet,
     plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
     plt.savefig('Gamma_P_v_diagram.png', dpi = 600)
     plt.show()
-    """
 
     #velocity triangles
     c1a = c_nozzle_out*np.sin(np.radians(alpha_stator)) # m/s; axial absolute velocity stator outlet
@@ -501,15 +500,14 @@ def meanline_design(D_mid,n_design,alpha_stator,h_over_D_mid,eta_guess, p_inlet,
     w1 = np.sqrt(w1a**2+w1u**2) # m/s; relative velocity stator outlet
     Ma1r = w1a/a_nozzle_out # [-]; relative Mach number stator outlet
 
-    beta1 = 23.5 # deg; rotor inlet flow angle                           #CONSTANT!!!!!
-    beta2 = 180 - beta1 # deg; rotor outlet flow angle (impulse turbine) #CONSTANT!!!!!
+    beta1 = beta_rotor # deg; rotor inlet flow angle                          
+    beta2 = 180 - beta1 # deg; rotor outlet flow angle (impulse turbine) 
 
     theta = beta2 - beta1 # deg; rotor total deflection angle
 
     ht_rotor = ht_nozzle + 0.0003 # m; rotor height
     P_guess = m_dot*dh_stage*eta_guess # W; guess for power output
-    #list of chord values
-    chords = [0.005,0.0075,0.01,0.0125,0.015,0.2,0.25,0.3,0.4,0.5]
+    chords = [0.005,0.0075,0.01,0.0125,0.015,0.2,0.25,0.3,0.4,0.5] #list of chord values
     chord_guess = 1.6*np.sqrt((P_guess/m_dot/1000+25))/1000 # m; guess for rotor chord
     chord = min(chords, key=lambda x:abs(x-chord_guess)) #pick the closest chord value from the list
     #chord = 0.0125 # m; rotor chord
@@ -521,13 +519,6 @@ def meanline_design(D_mid,n_design,alpha_stator,h_over_D_mid,eta_guess, p_inlet,
         k2 = 0.65 # [-]; phi_it_coeff n
         phi_corrected = np.sqrt(1-((1-current_phi**2)/k1)*(1+(k1-1)*(ht_rotor/chord)**(-k2))) # [-]; corrected impulse turbine loss factor
         phi_diff = abs(phi_corrected-current_phi) # [-]; difference between corrected and initial impulse turbine loss factor
-        """
-        while phi_diff > 0.0001:
-            current_phi = current_phi-0.00001
-            phi_corrected = np.sqrt(1-((1-current_phi**2)/k1)*(1+(k1-1)*(ht_rotor/chord)**(-k2)))
-            phi_diff = abs(phi_corrected-current_phi)
-            print(f"phi_diff: {phi_diff}, phi_corrected: {phi_corrected}, phi_it: {current_phi}")
-        """
         return phi_corrected
 
     phi_rotor = np.real(get_phi(phi_it,ht_rotor,chord)) # [-]; corrected impulse turbine loss factor
@@ -558,27 +549,26 @@ def meanline_design(D_mid,n_design,alpha_stator,h_over_D_mid,eta_guess, p_inlet,
         q_tot_out = RP.REFPROPdll(fluid,"HS","QMASS",baseSI,iMass,iFlag,h2t,s2,z); check_err(q_tot_out)
         #print(f"q_tot_out: {q_tot_out.Output[0]}")
         if q_tot_out.Output[0] < 0:
-            r = RP.REFPROPdll(fluid,"HS","T;D;W;P",baseSI,iMass,iFlag,h2t,s2,z); check_err(r)
+            r = RP.REFPROPdll(fluid,"HS","T;D;W;P",baseSI,iMass,iFlag,h2t,s2 ,z); check_err(r)
             T2t,rho2t,a2t,p_outlet_total = r.Output[0:4] # K, kg/m3, m/s, J/kgK
     except:
         T2t,rho2t,a2t,p_outlet_total = T2,rho2,a2,p_outlet # K, kg/m3, m/s, J/kgK
     P_turb_aero = m_dot*U*(c1u-c2u) # W; aerodynamic power
-    #disc friction loss correlation
-    P_disc_fric = 0.01*(n_design/60)**3*D_mid**5*rho2 # W; disc friction loss
-    P_partial_admission = (1-e)*rho2*(n_design/60)**3*D_mid**4*4.5*ht_rotor*1.85/2 # W; partial admission loss
-    eta_turb = (P_turb_aero-P_disc_fric-P_partial_admission)/(m_dot*dh_stage) # [-]; turbine efficiency
+    #friction loss correlation
+    P_fric = 0.01*(n_design/60)**3*D_mid**5*rho2 # W; friction loss
+    P_partial_admission = (1-e)*rho2*(n_design/60)**3*D_mid**4*4.5*ht_rotor*1.85/2 # W; partial admission and ventilation loss
+    P_mech = P_turb_aero - P_fric - P_partial_admission # W; mechanical power
+    eta_turb = (P_mech)/(m_dot*dh_stage) # [-]; turbine efficiency
     h_out_eta = h[0] - eta_turb*dh_stage # J/kg; outlet enthalpy with efficiency
     r=RP.REFPROPdll(fluid,"HP","S",baseSI,iMass,iFlag,h_out_eta,p_outlet,z); check_err(r)
     s_out_eta = r.Output[0] # J/kgK; outlet entropy with efficiency
-
-    #print(f"eta_turb: {eta_turb}")
 
     #package the results in a dictionary
     res = {"c1u":c1u,"c1a":c1a,"w1u":w1u,"w1a":w1a,"U":U,"c2u":c2u,"c2a":c2a,"w2u":w2u,"w2a":w2a,"alpha_stator":alpha_stator,
            "beta2":beta2,"alpha_rotor":alpha_rotor,"s":s,"h":h,"s_nozzle_out":s_nozzle_out,"h_nozzle_out":h_nozzle_out,"s2":s2,
            "h2":h2,"h2t":h2t,"s_out_eta":s_out_eta,"h_out_eta":h_out_eta,"p_inlet":p_inlet,"p_outlet":p_outlet,
            "p_outlet_total":p_outlet_total,"fluid":fluid,"z":z,"PR_is":PR_is,"Ma_is":Ma_is,"p_is":p_is,"throat_index":throat_index,
-           "PR_act":PR_act,"Ma_act":Ma_act,"eta_turb":eta_turb,"P_turb_aero":P_turb_aero,"U_over_c_is":U_over_c_is,
+           "PR_act":PR_act,"Ma_act":Ma_act,"eta_turb":eta_turb,"P_turb_aero":P_turb_aero,"P_mech":P_mech,"U_over_c_is":U_over_c_is,"Ma1r":Ma1r,
     }
 
     return res
@@ -762,7 +752,7 @@ def calculate_efficiency_for_n(args):
 
 def sensitivity_analysis_rpm_pool(n_design, D_mid, alpha_stator, h_over_D_mid, eta_guess, p_inlet, T_inlet):
     p_inlet_range = np.linspace(100000, 700000, 100)
-    n_range = np.linspace(7500, 24000, 100)
+    n_range = np.linspace(3000, 20000, 100)
 
     eta_turb_range = []
     P_turb_range = []
@@ -825,10 +815,6 @@ def sensitivity_analysis_rpm_pool(n_design, D_mid, alpha_stator, h_over_D_mid, e
     max_P_turb = [max(P_turb) for P_turb in P_turb_range]
     max_P_turb_index = [P_turb.index(max_P) for P_turb, max_P in zip(P_turb_range, max_P_turb)]
     max_P_turb_rpm = [n_range[index] for index in max_P_turb_index]
-    fig, ax = plt.subplots()
-    ax.plot(p_inlet_range / p_outlet, max_P_turb_rpm, label='Maximum power', color='black')
-    ax.set(xlabel='PR [-]', ylabel='Ideal Rotational speed [rpm]')
-    ax.grid(True, linestyle='--')
     
     # Polyfit the max_P_turb_rpm over p_inlet_range/p_outlet
     p = np.polyfit(p_inlet_range / p_outlet, max_P_turb_rpm, 4)
@@ -870,6 +856,19 @@ def sensitivity_analysis_rpm_pool(n_design, D_mid, alpha_stator, h_over_D_mid, e
     plt.show()
     plt.close()
 
+    #create a heatmap of the turbine torque over the rotational speed (x) and the pressure ratio (y), use matplotlib, show iso-torque lines 2,3,4,5,6,7,8,9,10,11,12 Nm
+    fig, ax = plt.subplots()
+    c = ax.pcolormesh(n_range, p_inlet_range/p_outlet, P_turb_range/(2*np.pi*n_range/60), cmap='viridis')
+    fig.colorbar(c, ax=ax, label=r'Turbine torque $T_{mech}$ [Nm]')
+    ax.set(xlabel=r'Rotational speed $n$ [rpm]', ylabel=r'Pressure ratio $\Pi$ [-]')
+    #plot iso-torque lines
+    iso_torque = [2,3,4,5,6,7,8,9,10,11,12]
+    for torque in iso_torque:
+        ax.contour(n_range, p_inlet_range/p_outlet, P_turb_range/(2*np.pi*n_range/60), levels=[torque], colors='black')
+    plt.savefig('sensitivity_analysis_rpm_torque_heatmap.png', dpi=600)
+    plt.show()
+    plt.close()
+
 def sensitivity_analysis_alpha_stator(n_design,D_mid,alpha_stator,h_over_D_mid,eta_guess):
     #vary alpha_stator in the range of 10° to 20° and calculate the eta_turb, plot it over alpha_stator
     alpha_stator_range = np.linspace(10,20,100)
@@ -903,8 +902,8 @@ def sensitivity_analysis_D_mid(n_design,D_mid,alpha_stator,h_over_D_mid,eta_gues
     plt.close()
 
 def evaluate(individual):
-    D_mid, n_design, alpha_stator, h_over_D_mid = individual
-    result = meanline_design(D_mid, n_design, alpha_stator, h_over_D_mid, eta_guess,p_inlet,T_inlet)
+    D_mid, n_design, alpha_stator, h_over_D_mid,beta_rotor = individual
+    result = meanline_design(D_mid, n_design, alpha_stator, h_over_D_mid, eta_guess,p_inlet,T_inlet,beta_rotor)
     return (result["eta_turb"],)
 
 def run_GA(population, toolbox, ngen, stats):
@@ -935,13 +934,21 @@ def plot_convergence(log):
 
     plt.show()
 
-def plot_parameters_evolution(log, param_labels):
+def plot_parameters_evolution(log, param_labels, population):
     gen = log.select("gen")
+    num_gens = len(gen)
     fig, axs = plt.subplots(len(param_labels))
 
     for i, param_label in enumerate(param_labels):
-        values = [ind[i] for ind in population]
-        axs[i].plot(gen, values, label=f'Parameter {param_label}')
+        # Collect the parameter values over the generations
+        values_over_gens = [[] for _ in range(num_gens)]
+        for g in range(num_gens):
+            # Get individuals from the population of the specific generation
+            for ind in population:
+                values_over_gens[g].append(ind[i])
+        # Calculate average parameter values for each generation
+        avg_values = [np.mean(values) for values in values_over_gens]
+        axs[i].plot(gen, avg_values, label=f'Parameter {param_label}')
         axs[i].set_xlabel("Generation")
         axs[i].set_ylabel(f'{param_label}')
         axs[i].legend()
@@ -996,15 +1003,14 @@ if __name__=='__main__':
     #sensitivity_analysis_alpha_stator(n_design,D_mid,alpha_stator,h_over_D_mid,eta_guess)
     #sensitivity_analysis_D_mid(n_design,D_mid,alpha_stator,h_over_D_mid,eta_guess)
      
-    #res=meanline_design(D_mid,n_design,alpha_stator,h_over_D_mid,eta_guess,p_inlet,T_inlet)
-    #print(res)
+    res=meanline_design(D_mid,n_design,alpha_stator,h_over_D_mid,eta_guess,p_inlet,T_inlet,beta_rotor)
+    print(res)
 
-     #uncomment as you wish to draw the plots
+    #uncomment as you wish to draw the plots
     #draw_nozzle_expansion(res["PR_is"],res["Ma_is"],res["p_is"],res["throat_index"],res["PR_act"],res["Ma_act"])
     #draw_expansion_line(res["s"],res["h"],res["s_nozzle_out"],res["h_nozzle_out"],res["s2"],res["h2"],res["h2t"],res["s_out_eta"],res["h_out_eta"],res["p_inlet"],res["p_outlet"],res["p_outlet_total"],res["fluid"],res["z"])
     #draw_velocity_triangles(res["c1u"],res["c1a"],res["w1u"],res["w1a"],res["U"],res["c2u"],res["c2a"],res["w2u"],res["w2a"],res["alpha_stator"],res["beta2"],res["alpha_rotor"])
 
-    
     #Genetic Algorithm 
     import multiprocessing
     pool = multiprocessing.Pool(multiprocessing.cpu_count()-2)
@@ -1018,10 +1024,11 @@ if __name__=='__main__':
         (0.08, 0.2),    # D_mid
         (10000, 25000),  # n_design
         (10, 18),         # alpha_stator (degrees)
-        (0.03, 0.07)     # h_over_D_mid
+        (0.03, 0.07),     # h_over_D_mid
+        (15, 30)            #beta_rotor (degrees)
     ]
 
-    param_labels = ['D_mid', 'n_design', 'alpha_stator', 'h_over_D_mid']
+    param_labels = ['D_mid', 'n_design', 'alpha_stator', 'h_over_D_mid', 'beta_rotor']
 
     # Helper to create a random individual
     def create_individual():
@@ -1066,10 +1073,8 @@ if __name__=='__main__':
     pool.join()
 
     plot_convergence(log) # Plot the convergence of the GA
-    #plot_parameters_evolution(log, param_labels)     # Plot the evolution of the parameters
-    #plot_fitness_landscape() # Plot the fitness landscape
-    #plot_population_distribution(population) # Plot the distribution of the population
+    # plot the evolution of different parameters over generations
+    #plot_parameters_evolution(log, param_labels,population)
     
-
     toc = timeit.default_timer()
     print(f"Elapsed time: {toc-tic} s")
