@@ -175,23 +175,23 @@ class AngleAnnotation(Arc):
 RP_path = "c:\\Program Files (x86)\\REFPROP"
 
 # cycle boundary conditions
-p_inlet = convert(570,"kPa","Pa") # kPa
-T_inlet = convert(184,"C","K") # C
+p_inlet = convert(550,"kPa","Pa") # kPa
+T_inlet = convert(180,"C","K") # C
 p_outlet = convert(55,"kPa","Pa") # kPa
-m_dot = 0.222  # kg/s
+m_dot = 0.25  # kg/s
 fluid = "MM" # hexamethyldisiloxane
 z = [1.0] # [-] molar fraction of the fluid
 
 # Design parameters
 n_design = 18000  # rpm
 D_mid = 0.135  # m
-alpha_stator = 13  # deg
+alpha_stator = 13 # deg
 beta_rotor = 23.5  # deg
 h_over_D_mid = 0.04  # [-]
 eta_guess = 0.7  # [-]
 e = 1 # [-] partial admission factor
 
-def meanline_design(D_mid,n_design,alpha_stator,h_over_D_mid,eta_guess, p_inlet, T_inlet,beta_rotor):
+def meanline_design(D_mid, n_design, alpha_stator, h_over_D_mid, eta_guess, p_inlet, T_inlet, beta_rotor, m_dot):
     #initialize REFPROP
     RP = REFPROPFunctionLibrary(os.environ['RPPREFIX']) # Instantiate the REFPROP function library
     RP.SETPATHdll(os.environ['RPPREFIX']) # Set the path to the folder containing the REFPROP shared library
@@ -287,6 +287,7 @@ def meanline_design(D_mid,n_design,alpha_stator,h_over_D_mid,eta_guess, p_inlet,
     b_nozzle_throat = b_nozzles_throat/no_nozzles # m
 
      #gammas
+    """
 
     CP.set_config_string(CP.ALTERNATIVE_REFPROP_PATH, os.getenv('RPPREFIX'))
 
@@ -490,6 +491,7 @@ def meanline_design(D_mid,n_design,alpha_stator,h_over_D_mid,eta_guess, p_inlet,
     plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
     plt.savefig('Gamma_P_v_diagram.png', dpi = 600)
     plt.show()
+    """
 
     #velocity triangles
     c1a = c_nozzle_out*np.sin(np.radians(alpha_stator)) # m/s; axial absolute velocity stator outlet
@@ -509,8 +511,8 @@ def meanline_design(D_mid,n_design,alpha_stator,h_over_D_mid,eta_guess, p_inlet,
     P_guess = m_dot*dh_stage*eta_guess # W; guess for power output
     chords = [0.005,0.0075,0.01,0.0125,0.015,0.2,0.25,0.3,0.4,0.5] #list of chord values
     chord_guess = 1.6*np.sqrt((P_guess/m_dot/1000+25))/1000 # m; guess for rotor chord
-    chord = min(chords, key=lambda x:abs(x-chord_guess)) #pick the closest chord value from the list
-    #chord = 0.0125 # m; rotor chord
+    #chord = min(chords, key=lambda x:abs(x-chord_guess)) #pick the closest chord value from the list
+    chord = 0.0125 # m; rotor chord
     phi_it = 0.957 - 0.000362 * theta - 0.0258 * Ma1r + 0.00000639 * theta**2 + 0.0674 * Ma1r**2 - 0.0000000753 * theta**3 - 0.043 * Ma1r**3 - 0.000238 * theta * Ma1r + 0.00000145 * theta**2 * Ma1r + 0.0000425 * theta * Ma1r**2 # [-]; impulse turbine loss factor, correlation
     def get_phi(phi_it,ht_rotor,chord):
         #need phi_it loop here to get w2 
@@ -554,6 +556,7 @@ def meanline_design(D_mid,n_design,alpha_stator,h_over_D_mid,eta_guess, p_inlet,
     except:
         T2t,rho2t,a2t,p_outlet_total = T2,rho2,a2,p_outlet # K, kg/m3, m/s, J/kgK
     P_turb_aero = m_dot*U*(c1u-c2u) # W; aerodynamic power
+    #print (f"p_outlet_total: {p_outlet_total}")
     #friction loss correlation
     P_fric = 0.01*(n_design/60)**3*D_mid**5*rho2 # W; friction loss
     P_partial_admission = (1-e)*rho2*(n_design/60)**3*D_mid**4*4.5*ht_rotor*1.85/2 # W; partial admission and ventilation loss
@@ -581,34 +584,34 @@ def draw_velocity_triangles(c1u,c1a,w1u,w1a,U,c2u,c2a,w2u,w2a,alpha_stator,beta2
     plt.arrow(0,0,w1u,w1a, head_width=5, head_length=5, fc='blue', ec='blue', length_includes_head=True)
     plt.arrow(w1u,w1a,U,0, head_width=5, head_length=5, fc='green', ec='green', length_includes_head=True)
     #add text to the arrows
-    plt.text(c1u/2+40,w1a/2+5, r'$\overrightarrow{c_2}$', ha='center', va='center', color='red')
-    plt.text(w1u/2-5,w1a/2+5, r'$\overrightarrow{w_2}$', ha='center', va='center', color='blue')
-    plt.text(w1u+U/2,w1a-4, r'$\overrightarrow{U}$', ha='center', va='center', color='green')
+   # plt.text(c1u/2+40,w1a/2+5, r'$\overrightarrow{c_2}$', ha='center', va='center', color='red')
+    #plt.text(w1u/2-5,w1a/2+5, r'$\overrightarrow{w_2}$', ha='center', va='center', color='blue')
+    #plt.text(w1u+U/2,w1a-4, r'$\overrightarrow{U}$', ha='center', va='center', color='green')
     #draw circular arc for alpha_stator between x axis and c1
-    alpha2 = Arc((0,0),20,10,0,0,alpha_stator,linewidth=1.5, color='red')
-    plt.gca().add_patch(alpha2)
-    plt.text(28,3, r'$\alpha_{2}$', ha='center', va='center', color='red')
+    #alpha2 = Arc((0,0),20,10,0,0,alpha_stator,linewidth=1.5, color='red')
+    #plt.gca().add_patch(alpha2)
+   # plt.text(28,3, r'$\alpha_{2}$', ha='center', va='center', color='red')
     #draw circular arc for beta2 between x axis and w2
-    beta_stator = Arc((0,0),40,20,0,0,180-beta2,linewidth=1.5, color='blue')
-    plt.gca().add_patch(beta_stator)
-    plt.text(30,10, r'$\beta_{2}$', ha='center', va='center', color='blue')
+    #beta_stator = Arc((0,0),40,20,0,0,180-beta2,linewidth=1.5, color='blue')
+    #plt.gca().add_patch(beta_stator)
+    #plt.text(30,10, r'$\beta_{2}$', ha='center', va='center', color='blue')
     #====rotor outlet====
     #end the line with an arrow
     plt.arrow(0,0,c2u,c2a, head_width=5, head_length=5, fc='red', ec='red', length_includes_head=True)
     plt.arrow(0,0,w2u,w2a, head_width=5, head_length=5, fc='blue', ec='blue', length_includes_head=True)
     plt.arrow(w2u,w2a,U,0, head_width=5, head_length=5, fc='green', ec='green', length_includes_head=True)
     #add text to the arrows
-    plt.text(c2u/2-9,c2a/2+4, r'$\overrightarrow{c_3}$', ha='center', va='center', color='red')
-    plt.text(w2u/2-25,w2a/2+4, r'$\overrightarrow{w_3}$', ha='center', va='center', color='blue')
-    plt.text(w2u+U/2,w2a-4, r'$\overrightarrow{U}$', ha='center', va='center', color='green')
+    #plt.text(c2u/2-9,c2a/2+4, r'$\overrightarrow{c_3}$', ha='center', va='center', color='red')
+    #plt.text(w2u/2-25,w2a/2+4, r'$\overrightarrow{w_3}$', ha='center', va='center', color='blue')
+   # plt.text(w2u+U/2,w2a-4, r'$\overrightarrow{U}$', ha='center', va='center', color='green')
     #draw circular arc for alpha_rotor between x axis and c2
-    alpha3 = Arc((0,0),20,10,0,0,alpha_rotor,linewidth=1.5, color='red')
-    plt.gca().add_patch(alpha3)
-    plt.text(8,7, r'$\alpha_{3}$', ha='center', va='center', color='red')
+   # alpha3 = Arc((0,0),20,10,0,0,alpha_rotor,linewidth=1.5, color='red')
+   # plt.gca().add_patch(alpha3)
+   # plt.text(8,7, r'$\alpha_{3}$', ha='center', va='center', color='red')
     #draw circular arc for beta3 between x axis and w3
-    beta_rotor = Arc((0,0),40,20,0,0,beta2,linewidth=1.5, color='blue')
-    plt.gca().add_patch(beta_rotor)
-    plt.text(-13,11, r'$\beta_{3}$', ha='center', va='center', color='blue')
+   # beta_rotor = Arc((0,0),40,20,0,0,beta2,linewidth=1.5, color='blue')
+    #plt.gca().add_patch(beta_rotor)
+   # plt.text(-13,11, r'$\beta_{3}$', ha='center', va='center', color='blue')
     plt.ylabel(r'Axial velocity [m.s$^{-1}$]')
     plt.xlabel(r'Tangential velocity [m.s$^{-1}$]')
     plt.xlim(-150,300)
@@ -673,9 +676,9 @@ def draw_expansion_line(s,h,s_nozzle_out,h_nozzle_out,s2,h2,h2t,s_out_eta,h_out_
     #change y axis to scientific notation
     ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
     #add text to the isobars
-    ax.text(s[0]-10, h[0]-2000, r'$p_{ad}$', ha='right')
-    ax.text(s_nozzle_out-10, h_nozzle_out-9000, r'$p_{em}$', ha='right')
-    ax.text(s_nozzle_out-10, h_nozzle_out-2000, r'$p_{em,tot}$', ha='right')
+    ax.text(s[0]-10, h[0]-2000, r'$p_{evap}$', ha='right')
+    ax.text(s_nozzle_out-10, h_nozzle_out-9000, r'$p_{cond}$', ha='right')
+    ax.text(s_nozzle_out-10, h_nozzle_out-2000, r'$p_{cond,tot}$', ha='right')
     #add text to the state points
     ax.text(s[0]-1, h[0]+500, '1', ha='right')
     ax.text(s_nozzle_out-1, h_nozzle_out-1000, '2', ha='right')
@@ -746,13 +749,13 @@ def legacy_sensitivity_analysis_rpm(n_design,D_mid,alpha_stator,h_over_D_mid,eta
     plt.close()
     
 def calculate_efficiency_for_n(args):
-    n, D_mid, alpha_stator, h_over_D_mid, eta_guess, p_inlet, T_inlet = args
-    res = meanline_design(D_mid, n, alpha_stator, h_over_D_mid, eta_guess, p_inlet, T_inlet)
+    n, D_mid, alpha_stator, h_over_D_mid, eta_guess, p_inlet, T_inlet, m_dot = args
+    res = meanline_design(D_mid, n, alpha_stator, h_over_D_mid, eta_guess, p_inlet, T_inlet, beta_rotor, m_dot)
     return res["eta_turb"], res["P_turb_aero"]
 
 def sensitivity_analysis_rpm_pool(n_design, D_mid, alpha_stator, h_over_D_mid, eta_guess, p_inlet, T_inlet):
-    p_inlet_range = np.linspace(100000, 700000, 100)
-    n_range = np.linspace(3000, 20000, 100)
+    p_inlet_range = np.linspace(100000, 700000, 100)  # Pa
+    n_range = np.linspace(3000, 20000, 100)           # rpm
 
     eta_turb_range = []
     P_turb_range = []
@@ -769,18 +772,39 @@ def sensitivity_analysis_rpm_pool(n_design, D_mid, alpha_stator, h_over_D_mid, e
 
     n_cpus = max(1, os.cpu_count() - 4)
 
-
     def check_err(r):
         if r.ierr > 0:
             raise ValueError(r.herr)
 
     for p_inlet in p_inlet_range:
+        # Convert p_inlet from Pa to kPa
+        p_inlet_kPa = p_inlet / 1000  # Convert Pa to kPa
+
+        # Calculate V̇ in l/min using the given relationship
+        V_dot_lpm = (p_inlet_kPa - 14.48) / 29.136  # l/min
+
+        # Check for negative or zero volumetric flow rate
+        if V_dot_lpm <= 0:
+            continue  # Skip this iteration if V̇ is not physically meaningful
+
+        # Convert V̇ from l/min to m³/s
+        V_dot_m3s = V_dot_lpm * (1e-3) / 60  # m³/s
+
+        # Calculate the inlet temperature based on the saturation temperature plus superheat
         r = RP.REFPROPdll(fluid, "PQ", "T", baseSI, iMass, iFlag, p_inlet, 1, z)
         check_err(r)
         T_inlet = r.Output[0] + dT_SH  # K; inlet temperature
-        
+
+        # Calculate the density at the new inlet conditions
+        r = RP.REFPROPdll(fluid, "PT", "D", baseSI, iMass, iFlag, p_inlet, 335, z)
+        check_err(r)
+        rho_inlet = r.Output[0]  # kg/m³
+
+        # Update the mass flow rate based on the new density
+        m_dot = V_dot_m3s * rho_inlet  # kg/s
+
         # Prepare arguments for parallel processing
-        args = [(n, D_mid, alpha_stator, h_over_D_mid, eta_guess, p_inlet, T_inlet) for n in n_range]
+        args = [(n, D_mid, alpha_stator, h_over_D_mid, eta_guess, p_inlet, T_inlet, m_dot) for n in n_range]
 
         # Parallel computation
         with Pool(processes=n_cpus) as pool:
@@ -789,6 +813,7 @@ def sensitivity_analysis_rpm_pool(n_design, D_mid, alpha_stator, h_over_D_mid, e
         eta_turb_for_p, P_turb_for_p = zip(*results)
         eta_turb_range.append(eta_turb_for_p)
         P_turb_range.append(P_turb_for_p)
+
 
     # Plotting the results
     fig, ax = plt.subplots()
@@ -834,7 +859,7 @@ def sensitivity_analysis_rpm_pool(n_design, D_mid, alpha_stator, h_over_D_mid, e
     P_turb_range = np.array(P_turb_range)
     c = ax.pcolormesh(n_range, p_inlet_range/p_outlet, P_turb_range, cmap='viridis')
     #plot iso-power lines
-    iso_power = [3000,4000,5000,6000,7000,8000,9000]
+    iso_power = [1000,2000,3000,4000,5000,6000,7000,8000,9000]
     for power in iso_power:
         ax.contour(n_range, p_inlet_range/p_outlet, P_turb_range, levels=[power], colors='black')
     fig.colorbar(c, ax=ax, label=r'Turbine power $P_{mech}$ [W]')
@@ -903,7 +928,7 @@ def sensitivity_analysis_D_mid(n_design,D_mid,alpha_stator,h_over_D_mid,eta_gues
 
 def evaluate(individual):
     D_mid, n_design, alpha_stator, h_over_D_mid,beta_rotor = individual
-    result = meanline_design(D_mid, n_design, alpha_stator, h_over_D_mid, eta_guess,p_inlet,T_inlet,beta_rotor)
+    result = meanline_design(D_mid, n_design, alpha_stator, h_over_D_mid, eta_guess,p_inlet,T_inlet,beta_rotor, m_dot)
     return (result["eta_turb"],)
 
 def run_GA(population, toolbox, ngen, stats):
@@ -1003,14 +1028,16 @@ if __name__=='__main__':
     #sensitivity_analysis_alpha_stator(n_design,D_mid,alpha_stator,h_over_D_mid,eta_guess)
     #sensitivity_analysis_D_mid(n_design,D_mid,alpha_stator,h_over_D_mid,eta_guess)
      
-    res=meanline_design(D_mid,n_design,alpha_stator,h_over_D_mid,eta_guess,p_inlet,T_inlet,beta_rotor)
+    res=meanline_design(D_mid,n_design,alpha_stator,h_over_D_mid,eta_guess,p_inlet,T_inlet,beta_rotor, m_dot)
     print(res)
 
     #uncomment as you wish to draw the plots
     #draw_nozzle_expansion(res["PR_is"],res["Ma_is"],res["p_is"],res["throat_index"],res["PR_act"],res["Ma_act"])
     #draw_expansion_line(res["s"],res["h"],res["s_nozzle_out"],res["h_nozzle_out"],res["s2"],res["h2"],res["h2t"],res["s_out_eta"],res["h_out_eta"],res["p_inlet"],res["p_outlet"],res["p_outlet_total"],res["fluid"],res["z"])
-    #draw_velocity_triangles(res["c1u"],res["c1a"],res["w1u"],res["w1a"],res["U"],res["c2u"],res["c2a"],res["w2u"],res["w2a"],res["alpha_stator"],res["beta2"],res["alpha_rotor"])
-
+    draw_velocity_triangles(res["c1u"],res["c1a"],res["w1u"],res["w1a"],res["U"],res["c2u"],res["c2a"],res["w2u"],res["w2a"],res["alpha_stator"],res["beta2"],res["alpha_rotor"])
+    #save the variables shown in the velocity triangles into a dictionary
+    #velocity_triangles = {"c1u":res["c1u"],"c1a":res["c1a"],"w1u":res["w1u"],"w1a":res["w1a"],"U":res["U"],"c2u":res["c2u"],"c2a":res["c2a"],"w2u":res["w2u"],"w2a":res["w2a"],"alpha_stator":res["alpha_stator"],"beta2":res["beta2"],"alpha_rotor":res["alpha_rotor"]}
+    """
     #Genetic Algorithm 
     import multiprocessing
     pool = multiprocessing.Pool(multiprocessing.cpu_count()-2)
@@ -1075,6 +1102,6 @@ if __name__=='__main__':
     plot_convergence(log) # Plot the convergence of the GA
     # plot the evolution of different parameters over generations
     #plot_parameters_evolution(log, param_labels,population)
-    
+    """
     toc = timeit.default_timer()
     print(f"Elapsed time: {toc-tic} s")

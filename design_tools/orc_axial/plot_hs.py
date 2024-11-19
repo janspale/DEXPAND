@@ -36,7 +36,7 @@ def check_err(r): # Function to check the error code from REFPROP
 p_inlet = convert(550,"kPa","Pa") # kPa
 T_inlet = convert(180,"C","K") # C
 p_outlet = convert(55,"kPa","Pa") # kPa
-eta_is = 0.75  # isentropic efficiency
+eta_is = 0.7  # isentropic efficiency
 
 c_in = 10 # m/s, inlet velocity
 
